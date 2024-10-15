@@ -1,98 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCHub 3D Brainstorming & Chat</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-    <style>
-        body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        #canvas-container { flex: 1; }
-        #chat-container { height: 30%; background-color: #f1f1f1; overflow: auto; padding: 10px; }
-        #input-container { display: flex; }
-        #message-input { flex: 1; padding: 10px; }
-        #send-button { padding: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Brainstorming Chat</title>
+  <style>
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background-color: black;
+    }
+  </style>
 </head>
 <body>
-    <div id="canvas-container"></div>
-    <div id="chat-container"></div>
-    <div id="input-container">
-        <input type="text" id="message-input" placeholder="Type a message..." />
-        <button id="send-button">Send</button>
-    </div>
+  <h1>3D Brainstorming Chat</h1>
+  <ul id="messages"></ul>
+  <input id="message-input" autocomplete="off" placeholder="Type a 
+message..." />
+  <button onclick="sendMessage()">Send</button>
 
-    <script>
-        const socket = io();
+  <script src="/socket.io/socket.io.js"></script>
+  <script 
+src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const socket = io();
 
-        // Select elements
-        const chatContainer = document.getElementById('chat-container');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('message-input');
 
-        // Helper function to append messages to the chat
-        function appendMessage(msg) {
-            const messageElement = document.createElement('div');
-            messageElement.textContent = msg;
-            chatContainer.appendChild(messageElement);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll
-        }
+    socket.on('chat message', (msg) => {
+      const item = document.createElement('li');
+      item.textContent = msg;
+      messages.appendChild(item);
+    });
 
-        // Event listener for sending messages
-        function sendMessage() {
-            const msg = messageInput.value.trim();
-            if (msg) {
-                socket.emit('chatMessage', msg);  // Emit the message to the server
-                appendMessage(`You: ${msg}`);     // Show your message locally
-                messageInput.value = '';          // Clear the input field
-                setTimeout(() => messageInput.focus(), 0);  // Re-focus the input field
-            }
-        }
+    function sendMessage() {
+      const msg = input.value;
+      socket.emit('chat message', msg);
+      input.value = '';
+    }
 
-        // Send message on button click
-        sendButton.addEventListener('click', sendMessage);
+    // 3D Sphere
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 
+window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-        // Send message on Enter key press
-        messageInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();  // Trigger send function
-            }
-        });
+    const geometry = new THREE.SphereGeometry(5, 32, 32);
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
 
-        // Receive messages from other users
-        socket.on('chatMessage', (msg) => {
-            appendMessage(`Other: ${msg}`);  // Display messages from others
-        });
+    camera.position.z = 10;
 
-        // 3D Scene Setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-
-        camera.position.z = 5;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // Handle window resizing
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
-    </script>
+    function animate() {
+      requestAnimationFrame(animate);
+      sphere.rotation.x += 0.01;
+      sphere.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
 </body>
 </html>
+
